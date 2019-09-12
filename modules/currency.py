@@ -30,64 +30,6 @@ BOT_ID = config.get('main', 'bot_id')
 
 with open('static/abi.json', 'r') as abi_file:
     ABI = json.load(abi_file)
-
-
-async def get_balance(user_id):
-    """
-    Retrieve user's balance from DB.
-    """
-    get_balance_sql = "SELECT balance FROM users WHERE user_id = %s"
-    get_balance_values = [user_id, ]
-    balance_return = db.get_db_data(get_balance_sql, get_balance_values)
-    try:
-        return balance_return[0][0]
-    except Exception as e:
-        return None
-
-
-async def set_balance(user_id, amount):
-    """
-    Set the balance to the provided amount.
-    """
-    set_balance_sql = "UPDATE users SET balance = %s WHERE user_id = %s"
-    set_balance_values = [amount, user_id]
-    db.set_db_data(set_balance_sql, set_balance_values)
-
-
-async def remove_balance(user_id, amount):
-    """
-    Remove the provided amount from the user's balance.
-    """
-    current_balance_sql = "SELECT balance FROM users WHERE user_id = %s"
-    current_balance_values = [user_id, ]
-    current_balance_return = db.get_db_data(current_balance_sql, current_balance_values)
-
-    new_balance = Decimal(current_balance_return[0][0]) - Decimal(amount)
-
-    await set_balance(user_id, new_balance)
-
-
-async def own_account(address):
-    address = address.lower()
-    db_return = db.get_db_data("SELECT user_id FROM users WHERE address = %s",
-                               [address, ])
-
-    if db_return is ():
-        return False
-    else:
-        return True
-
-
-def get_master_key():
-    """
-    Retrieve the private key for the master account from the keystore file
-    """
-    try:
-        master_keyfile = json.load(open('keyfiles/master.json', 'rb'))
-        master_key = eth_keyfile.decode_keyfile_json(master_keyfile, b'')
-        return master_key
-    except Exception as e:
-        return False
     
 
 async def get_all_txs(address):
@@ -192,10 +134,8 @@ async def check_pending(message):
                 new_blockno = block['blockNumber']
 
         if Decimal(new_balance) > 0 and Decimal(new_blockno) > 0:
-            get_balance_sql = "SELECT balance FROM users WHERE user_id = %s"
-            get_balance_values = [message.author.id, ]
-            balance = db.get_db_data(get_balance_sql, get_balance_values)
-            balance = Decimal(balance[0][0]) + new_balance
+            balance, _ = tasks.get_balance(message.author.id)
+            balance = Decimal(balance) + new_balance
 
             update_balance_sql = "UPDATE users SET block_number = %s, balance = %s WHERE user_id = %s"
             update_balance_values = [new_blockno, balance, message.author.id]
@@ -213,12 +153,10 @@ async def add_balance(user, username, amount):
     """
     Add the balance to the provided user.
     """
-    current_balance = await get_balance(user)
+    current_balance, _ = tasks.get_balance(user)
     if current_balance is not None and current_balance is not ():
         new_balance = Decimal(current_balance) + Decimal(amount)
-        set_balance_sql = "UPDATE users SET balance = %s WHERE user_id = %s"
-        set_balance_values = [new_balance, user]
-        db.set_db_data(set_balance_sql, set_balance_values)
+        await tasks.set_balance(user, new_balance)
     else:
         new_user_sql = "INSERT INTO users (balance, user_id, username) VALUES (%s, %s, %s)"
         new_user_values = [amount, user, username]
@@ -262,7 +200,7 @@ async def send_tip(message, users_to_tip, ctx, bot):
                                                                              TOKEN,
                                                                              message['author']))
 
-    await set_balance(message['author'], sender_new_balance)
+    await tasks.set_balance(message['author'], sender_new_balance)
 
     await ctx.message.add_reaction('☑')
     # Note, these have unicode that does not show in IDE.  Do not modify
@@ -276,7 +214,7 @@ async def validate_user(message):
     """
     Validate the user has enough tokens to send the tip.
     """
-    message['sender_balance'] = Decimal(await get_balance(message['author']))
+    message['sender_balance'], _ = Decimal(tasks.get_balance(message['author']))
 
     if (message['sender_balance'] is None
             or message['sender_balance'] is ()

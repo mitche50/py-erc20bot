@@ -131,14 +131,16 @@ async def balance(ctx):
         return
 
     new_balance = await currency.check_pending(message)
-    user_balance = await currency.get_balance(message.author.id)
+    user_balance, pending = tasks.get_balance(message.author.id)
 
     if user_balance == () or user_balance is None:
         await message.author.send("There was an error retrieving your account balance.  Please reach out to the "
                                   "administrator of this bot.  ERROR: Balance was empty for "
                                   "user {}".format(message.author.id))
     else:
-        await message.author.send("Your balance is {} REN.".format(user_balance))
+        await message.author.send("Your balance is {0} {1}.  You have {2} {1} pending withdraw".format(user_balance,
+                                                                                                       TOKEN,
+                                                                                                       pending))
 
     if new_balance > 0:
         tasks.forward_to_master.delay(address, new_balance)
@@ -201,27 +203,32 @@ async def withdraw(ctx):
         return
     try:
         to = w3.toChecksumAddress(msg_list[1])
-        send_all = False
         remove_amount = None
         if len(msg_list) > 2:
             # User provided an amount, send the whole amount.
+            print(msg_list)
             amount = Decimal(msg_list[2])
             total_amount = amount
             remove_amount = amount + FEE
+            tasks.add_pending(message.author.id, amount)
+            tasks.remove_balance(message.author.id, remove_amount)
         else:
             # User didn't provide an amount, send their whole balance - FEE
-            amount = Decimal(await currency.get_balance(message.author.id))
+            amount, _ = tasks.get_balance(message.author.id)
+            amount = Decimal(amount)
             total_amount = amount - FEE
-            send_all = True
+            tasks.add_pending(message.author.id, amount)
+            tasks.set_balance(message.author.id, 0)
 
-        user_balance = Decimal(await currency.get_balance(message.author.id))
+        user_balance, _ = tasks.get_balance(message.author.id)
+        user_balance = Decimal(user_balance)
         if user_balance < total_amount or user_balance < FEE:
             await message.author.send("You were trying to withdraw {1} {0} + a fee of {3} {0} and you "
-                                      "only have {2} {0}.  Please review the amount "
-                                      "you're withdrawing.".format(TOKEN, amount, user_balance, FEE))
+                                      "only have {2} {0}.  Please review the your "
+                                      "balance before withdrawing.".format(TOKEN, total_amount, user_balance, FEE))
             return
 
-        tasks.send_tokens.delay(to, total_amount, message.author.id, send_all, remove_amount)
+        tasks.send_tokens.delay(to, total_amount, message.author.id)
 
         await message.author.send("Your withdraw request for {2} {3} + {4} {3} fee has been queued.  You can check "
                                   "https://{0}/address/{1}#tokentxns for your transaction hash.  Please give a minute "
@@ -231,9 +238,11 @@ async def withdraw(ctx):
                                                                                        TOKEN,
                                                                                        FEE))
 
-    except ValueError:
+    except ValueError as e:
+        logger.error("Error converting decimal value on withdraw: {}".format(e))
         await message.author.send(incorrect_withdraw)
-    except InvalidOperation:
+    except InvalidOperation as e:
+        logger.error("Error while performing withdraw: {}".format(e))
         await message.author.send(incorrect_withdraw)
 
 

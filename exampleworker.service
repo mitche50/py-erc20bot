@@ -3,11 +3,11 @@ Description=Python ERC20 Tip Bot Worker
 After=network.target
 
 [Service]
-User=mitche50
+User=YOUR_USERNAME
 Group=www-data
-WorkingDirectory=/home/mitche50/rentipbot
-Environment="PATH=/home/mitche50/rentipbot/venv/bin"
-ExecStart=/home/mitche50/rentipbot/celery.sh
+WorkingDirectory=/home/YOUR_USERNAME/py-erc20bot
+Environment="PATH=/home/YOUR_USERNAME/py-erc20bot/venv/bin"
+ExecStart=/home/YOUR_USERNAME/py-erc20bot/celery.sh
 
 [Install]
 WantedBy=multi-user.target

@@ -1,6 +1,5 @@
-*.log
+*.log*
 config.ini
-keyfiles/*
 venv
 .idea
 __pycache__

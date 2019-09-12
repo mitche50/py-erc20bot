@@ -40,6 +40,37 @@ def set_balance(user_id, amount):
     db.set_db_data(set_balance_sql, set_balance_values)
 
 
+def set_pending(user_id, amount):
+    """
+    Set the user's pending balance to the provided amount.
+    """
+    set_pending_sql = "UPDATE users SET pending_withdraw = %s WHERE user_id = %s"
+    set_pending_values = [amount, user_id]
+    db.set_db_data(set_pending_sql, set_pending_values)
+
+
+def add_pending(user_id, amount):
+    """
+    Add the provided amount to the user's pending balance
+    """
+    _, pending = get_balance(user_id)
+    new_pending = Decimal(pending) + Decimal(amount)
+    set_pending(user_id, new_pending)
+
+
+def get_balance(user_id):
+    """
+    Retrieve user's balance from DB.
+    """
+    get_balance_sql = "SELECT balance, pending_withdraw FROM users WHERE user_id = %s"
+    get_balance_values = [user_id, ]
+    balance_return = db.get_db_data(get_balance_sql, get_balance_values)
+    try:
+        return balance_return[0][0], balance_return[0][1]
+    except Exception as e:
+        return None
+
+
 def remove_balance(user_id, amount):
     """
     Remove the provided amount from the user's balance.
@@ -94,7 +125,7 @@ def get_priv_key(address):
 
 
 @queue.task()
-def send_tokens(to, amount, author_id, send_all, remove_amount):
+def send_tokens(to, amount, author_id):
     """
     Transfer the provided amount of tokens to the provided account
     """
@@ -120,17 +151,12 @@ def send_tokens(to, amount, author_id, send_all, remove_amount):
 
             try:
                 w3.eth.waitForTransactionReceipt(w3.toHex(send_hash), timeout=1800)
-                if send_all:
-                    # User sent their whole balance, remove their whole balance.
-                    set_balance(author_id, 0)
-                    return True
-                else:
-                    # User sent a specific amount, remove the amount + the FEE
-                    remove_balance(author_id, remove_amount)
-                    return True
+                _, pending = get_balance(author_id)
+                new_pending = Decimal(pending) - Decimal(amount)
+                set_pending(author_id, new_pending)
+                return True
             except Exception as e:
                 return False
-
         else:
             return False
     except Exception as e:
