@@ -90,6 +90,22 @@ def create_tables():
                          charset="utf8mb4")
     db_cursor = db.cursor()
     # TODO: Add tables
+    exists = check_table_exists('users')
+    if not exists:
+        sql = """
+              CREATE TABLE `users` (
+                  `user_id` varchar(64) NOT NULL,
+                  `username` varchar(45) DEFAULT NULL,
+                  `address` varchar(64) DEFAULT NULL,
+                  `balance` varchar(64) DEFAULT NULL,
+                  `notify` tinyint(1) DEFAULT NULL,
+                  `block_number` int(64) DEFAULT '0',
+                  PRIMARY KEY (`user_id`),
+                  UNIQUE KEY `address_UNIQUE` (`address`)
+              ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+              """
+        db_cursor.execute(sql)
+        print("Confirming user table created: {}".format(check_table_exists('users')))
     db.commit()
     db_cursor.close()
     db.close()

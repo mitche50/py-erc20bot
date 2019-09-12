@@ -2,6 +2,7 @@ import modules.aliases as aliases
 from celery import Celery
 import configparser
 import modules.currency as currency
+from modules.db import db_init
 from decimal import Decimal, InvalidOperation
 import discord
 from discord.ext import commands
@@ -238,4 +239,5 @@ async def withdraw(ctx):
 
 if __name__ == '__main__':
     queue = Celery('tasks', broker='redis://localhost//')
+    db_init()
     bot.run(BOT_TOKEN)

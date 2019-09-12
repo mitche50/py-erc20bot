@@ -1,0 +1,14 @@
+[Unit]
+Description=Python ERC20 Tip Bot Worker
+After=network.target
+
+[Service]
+User=mitche50
+Group=www-data
+WorkingDirectory=/home/mitche50/rentipbot
+Environment="PATH=/home/mitche50/rentipbot/venv/bin"
+ExecStart=/home/mitche50/rentipbot/celery.sh
+
+[Install]
+WantedBy=multi-user.target
+

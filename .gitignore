@@ -3,4 +3,4 @@ config.ini
 keyfiles/*
 venv
 .idea
-modules/__pycache__
+__pycache__
