@@ -1,0 +1,1 @@
+Create master key and store in a keystore JSON file under file name "keyfiles/master" with a blank password

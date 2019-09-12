@@ -1,0 +1,8 @@
+celery
+discord
+eth-keyfile
+flask
+mysqlclient
+redis
+requests
+web3
