@@ -98,6 +98,7 @@ def create_tables():
                   `username` varchar(45) DEFAULT NULL,
                   `address` varchar(64) DEFAULT NULL,
                   `balance` varchar(64) DEFAULT NULL,
+                  `pending_withdraw` varchar(64) DEFAULT '0',
                   `notify` tinyint(1) DEFAULT NULL,
                   `block_number` int(64) DEFAULT '0',
                   PRIMARY KEY (`user_id`),
