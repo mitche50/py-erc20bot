@@ -21,6 +21,7 @@ ETHERSCAN_KEY = config.get('main', 'etherscan_key')
 INFURA = config.get('main', 'infura')
 INFURA_ROUTE = config.get(ENV, 'infura_route')
 BOT_TOKEN = config.get('main', 'bot_token')
+CHAIN_ID = config.get(ENV, 'chain_id')
 
 queue = Celery('tasks', broker='redis://localhost//')
 bot = discord.Client()
@@ -140,7 +141,7 @@ def send_tokens(to, amount, author_id):
             send_amount = float(amount) * (10**18)
 
             send_tx = contract.functions.transfer(to, int(send_amount)).buildTransaction(dict(
-                    chainId=3,
+                    chainId=int(CHAIN_ID),
                     gas=140000,
                     gasPrice=w3.eth.gasPrice,
                     nonce=w3.eth.getTransactionCount(master)
@@ -177,7 +178,7 @@ def forward_to_master(address, amount):
         send_amount = float(amount) * (10**18)
 
         send_tx = contract.functions.transferFrom(address, master, int(send_amount)).buildTransaction(dict(
-            chainId=3,
+            chainId=int(CHAIN_ID),
             gas=140000,
             gasPrice=w3.eth.gasPrice,
             nonce=w3.eth.getTransactionCount(master)
@@ -239,7 +240,7 @@ def allow_master(address):
 
     try:
         fund = w3.eth.account.signTransaction(dict(
-            chainId=3,
+            chainId=int(CHAIN_ID),
             nonce=master_nonce,
             gasPrice=w3.eth.gasPrice,
             gas=21000,
@@ -258,7 +259,7 @@ def allow_master(address):
 
         # Once funded, allow the master to sign transactions for all accounts
         approve_tx = contract.functions.approve(master, (1000 * 10**18)).buildTransaction(dict(
-            chainId=3,
+            chainId=int(CHAIN_ID),
             gas=140000,
             gasPrice=w3.eth.gasPrice,
             nonce=w3.eth.getTransactionCount(address)
