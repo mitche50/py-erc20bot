@@ -23,6 +23,7 @@ CONTRACT_ADDRESS = config.get('main', 'contract')
 MASTER = config.get('main', 'master')
 FEE = config.get('main', 'fee')
 TOKEN = config.get('main', 'token')
+ETHERSCAN_ROUTE = config.get(ENV, 'etherscan_route')
 ETHERSCAN_KEY = config.get('main', 'etherscan_key')
 INFURA = config.get('main', 'infura')
 INFURA_ROUTE = config.get(ENV, 'infura_route')
@@ -38,8 +39,8 @@ async def get_all_txs(address):
     blockno_return = db.get_db_data(get_blockno_call, get_blockno_values)
     if blockno_return is not ():
         blockno = blockno_return[0][0]
-        route = "https://api-ropsten.etherscan.io/api?module=account&action=tokentx&contractaddress={}" \
-                "&address={}&startblock={}&sort=asc&apikey={}".format(CONTRACT_ADDRESS, address[0][0],
+        route = "{}api?module=account&action=tokentx&contractaddress={}" \
+                "&address={}&startblock={}&sort=asc&apikey={}".format(ETHERSCAN_ROUTE, CONTRACT_ADDRESS, address[0][0],
                                                                       blockno + 1, ETHERSCAN_KEY)
         r = requests.get(route)
         rx = r.json()
