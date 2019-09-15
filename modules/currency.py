@@ -125,28 +125,32 @@ async def check_pending(message):
             and address[0][0] != 'GENERATING' and address[0][0] != 'ERROR'):
 
         transactions, blockno = await get_all_txs(address)
+
         new_balance = 0
         new_blockno = 0
+        try:
+            for block in transactions['result']:
+                if block['to'].lower() == address[0][0].lower() and Decimal(block['blockNumber']) > Decimal(blockno):
+                    decimals = Decimal(10**18)
+                    new_balance += Decimal(Decimal(block['value']) / decimals)
+                    new_blockno = block['blockNumber']
 
-        for block in transactions['result']:
-            if block['to'].lower() == address[0][0].lower() and Decimal(block['blockNumber']) > Decimal(blockno):
-                decimals = Decimal(10**18)
-                new_balance += Decimal(Decimal(block['value']) / decimals)
-                new_blockno = block['blockNumber']
+            if Decimal(new_balance) > 0 and Decimal(new_blockno) > 0:
+                balance, _ = tasks.get_balance(message.author.id)
+                balance = Decimal(balance) + new_balance
 
-        if Decimal(new_balance) > 0 and Decimal(new_blockno) > 0:
-            balance, _ = tasks.get_balance(message.author.id)
-            balance = Decimal(balance) + new_balance
-
-            update_balance_sql = "UPDATE users SET block_number = %s, balance = %s WHERE user_id = %s"
-            update_balance_values = [new_blockno, balance, message.author.id]
-            success = db.set_db_data(update_balance_sql, update_balance_values)
-            if success is not None:
-                logger.error("Error in setting DB data: {}".format(success))
-                await message.author.send("There was an error setting your new balance, please reach "
-                                          "out to bot admin: {}".format(success))
-
+                update_balance_sql = "UPDATE users SET block_number = %s, balance = %s WHERE user_id = %s"
+                update_balance_values = [new_blockno, balance, message.author.id]
+                success = db.set_db_data(update_balance_sql, update_balance_values)
+                if success is not None:
+                    logger.error("Error in setting DB data: {}".format(success))
+                    await message.author.send("There was an error setting your new balance, please reach "
+                                              "out to bot admin: {}".format(success))
+        except Exception as e:
+            await message.author.send("There was an error setting your new balance, please reach out to "
+                                      "bot admin: {}".format(e))
         return new_balance
+
     return 0
 
 
