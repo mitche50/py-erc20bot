@@ -55,7 +55,16 @@ def add_pending(user_id, amount):
     Add the provided amount to the user's pending balance
     """
     _, pending = get_balance(user_id)
-    new_pending = Decimal(pending) + Decimal(amount)
+    new_pending = pending + Decimal(amount)
+    set_pending(user_id, new_pending)
+
+
+def remove_pending(user_id, amount):
+    """
+    Add the provided amount to the user's pending balance
+    """
+    _, pending = get_balance(user_id)
+    new_pending = pending - Decimal(amount)
     set_pending(user_id, new_pending)
 
 
@@ -66,8 +75,10 @@ def get_balance(user_id):
     get_balance_sql = "SELECT balance, pending_withdraw FROM users WHERE user_id = %s"
     get_balance_values = [user_id, ]
     balance_return = db.get_db_data(get_balance_sql, get_balance_values)
+    balance = Decimal(balance_return[0][0])
+    pending = Decimal(balance_return[0][1])
     try:
-        return balance_return[0][0], balance_return[0][1]
+        return balance, pending
     except Exception as e:
         return None
 
@@ -152,9 +163,7 @@ def send_tokens(to, amount, author_id):
 
             try:
                 w3.eth.waitForTransactionReceipt(w3.toHex(send_hash), timeout=18000)
-                _, pending = get_balance(author_id)
-                new_pending = Decimal(pending) - Decimal(amount)
-                set_pending(author_id, new_pending)
+                remove_pending(author_id, amount)
                 return True
             except Exception as e:
                 return False

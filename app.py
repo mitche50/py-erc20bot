@@ -162,14 +162,12 @@ async def tip(ctx):
 
     # Set the list of users to tip
     users_to_tip = await currency.set_tip_list(message, bot)
-    logger.debug("users to tip: {}".format(users_to_tip))
-    if users_to_tip is None:
+    if users_to_tip is None or len(users_to_tip) == 0:
         await ctx.message.add_reaction('❌')
         await ctx.message.author.send("We couldn't find anyone in your message to tip.  Please review and resend.")
         return
 
     message = await currency.validate_tip_amount(message, users_to_tip)
-    logger.debug("validate tip amount: {}".format(message))
     if message['tip_amount'] is None:
         await ctx.message.add_reaction('❌')
         await ctx.message.author.send("There was an error with the format of your tip amount.  "

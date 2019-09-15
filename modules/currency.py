@@ -137,7 +137,7 @@ async def check_pending(message):
 
             if Decimal(new_balance) > 0 and Decimal(new_blockno) > 0:
                 balance, _ = tasks.get_balance(message.author.id)
-                balance = Decimal(balance) + new_balance
+                balance = balance + new_balance
 
                 update_balance_sql = "UPDATE users SET block_number = %s, balance = %s WHERE user_id = %s"
                 update_balance_values = [new_blockno, balance, message.author.id]
@@ -207,7 +207,7 @@ async def send_tip(message, users_to_tip, ctx, bot):
     except Exception as e:
         logger.error("Error adding balance / sending dm: {}".format(e))
         pass
-    
+
     await tasks.set_balance(message['author'], sender_new_balance)
 
     await ctx.message.add_reaction('☑')
