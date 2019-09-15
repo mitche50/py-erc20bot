@@ -206,7 +206,6 @@ async def withdraw(ctx):
         to = w3.toChecksumAddress(msg_list[1])
         user_balance, _ = tasks.get_balance(message.author.id)
         user_balance = Decimal(user_balance)
-        remove_amount = None
         if user_balance <= 0:
             await message.author.send("You have 0 {} balance.  Please fund your account "
                                       "before trying to withdraw!".format(TOKEN))
@@ -225,8 +224,9 @@ async def withdraw(ctx):
             amount, _ = tasks.get_balance(message.author.id)
             amount = Decimal(amount)
             total_amount = amount - FEE
-            tasks.add_pending(message.author.id, amount)
-            tasks.set_balance(message.author.id, 0)
+            remove_amount = amount
+            tasks.add_pending(message.author.id, remove_amount)
+            tasks.remove_balance(message.author.id, amount)
 
         if user_balance < total_amount or user_balance < FEE:
             await message.author.send("You were trying to withdraw {1} {0} + a fee of {3} {0} and you "
