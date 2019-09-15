@@ -240,7 +240,7 @@ async def withdraw(ctx):
                                   "https://{0}/address/{1}#tokentxns for your transaction hash.  Please give a minute "
                                   "or 2 for the block to show on the explorer.".format(ETHERSCAN_ROUTE,
                                                                                        to,
-                                                                                       remove_amount,
+                                                                                       total_amount,
                                                                                        TOKEN,
                                                                                        FEE))
 
