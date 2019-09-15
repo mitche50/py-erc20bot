@@ -197,14 +197,17 @@ async def send_tip(message, users_to_tip, ctx, bot):
     Update the database with new balances and respond with emojis.
     """
     sender_new_balance = message['sender_balance'] - message['total_tip_amount']
-
-    for receiver in users_to_tip:
-        await add_balance(receiver['user'], receiver['username'], message['tip_amount'])
-        dm_user = bot.get_user(int(receiver['user']))
-        await dm_user.send("You just received a {} {} tip from <@{}>".format(message['tip_amount'],
-                                                                             TOKEN,
-                                                                             message['author']))
-
+    try:
+        for receiver in users_to_tip:
+            await add_balance(receiver['user'], receiver['username'], message['tip_amount'])
+            dm_user = bot.get_user(int(receiver['user']))
+            await dm_user.send("You just received a {} {} tip from <@{}>".format(message['tip_amount'],
+                                                                                 TOKEN,
+                                                                                 message['author']))
+    except Exception as e:
+        logger.error("Error adding balance / sending dm: {}".format(e))
+        pass
+    
     await tasks.set_balance(message['author'], sender_new_balance)
 
     await ctx.message.add_reaction('☑')

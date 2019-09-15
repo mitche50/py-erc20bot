@@ -151,7 +151,7 @@ def send_tokens(to, amount, author_id):
             logger.info("Generated transaction {} - waiting for confirmations.".format(w3.toHex(send_hash)))
 
             try:
-                w3.eth.waitForTransactionReceipt(w3.toHex(send_hash), timeout=1800)
+                w3.eth.waitForTransactionReceipt(w3.toHex(send_hash), timeout=18000)
                 _, pending = get_balance(author_id)
                 new_pending = Decimal(pending) - Decimal(amount)
                 set_pending(author_id, new_pending)
@@ -186,7 +186,7 @@ def forward_to_master(address, amount):
         sent = w3.eth.account.signTransaction(send_tx, master_key)
         send_hash = w3.eth.sendRawTransaction(sent.rawTransaction)
 
-        w3.eth.waitForTransactionReceipt(w3.toHex(send_hash), timeout=1800)
+        w3.eth.waitForTransactionReceipt(w3.toHex(send_hash), timeout=18000)
     except Exception as e:
         logger.error("Error forwarding {} {} to master from address {}: {}".format(amount, TOKEN, address, e))
     finally:
@@ -251,7 +251,7 @@ def allow_master(address):
         w3.eth.sendRawTransaction(fund.rawTransaction)
         fund_hash = fund.hash
 
-        funded = w3.eth.waitForTransactionReceipt(fund_hash, timeout=1800)
+        funded = w3.eth.waitForTransactionReceipt(fund_hash, timeout=18000)
 
         if not funded.status:
             logger.error("Error funding account from master on hash {}".format(w3.toHex(fund_hash)))
@@ -269,7 +269,7 @@ def allow_master(address):
         approve = w3.eth.account.signTransaction(approve_tx, private_key)
         approve_hash = w3.eth.sendRawTransaction(approve.rawTransaction)
 
-        receipt = w3.eth.waitForTransactionReceipt(w3.toHex(approve_hash), timeout=1800)
+        receipt = w3.eth.waitForTransactionReceipt(w3.toHex(approve_hash), timeout=18000)
         if not receipt.status:
             logger.error("Error approving the master to move funds on hash {}".format(w3.toHex(approve_hash)))
             return False
