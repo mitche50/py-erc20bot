@@ -253,6 +253,5 @@ async def withdraw(ctx):
 
 
 if __name__ == '__main__':
-    queue = Celery('tasks', broker='redis://localhost//')
     db_init()
     bot.run(BOT_TOKEN)

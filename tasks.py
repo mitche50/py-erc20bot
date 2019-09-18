@@ -72,14 +72,15 @@ def get_balance(user_id):
     """
     Retrieve user's balance from DB.
     """
-    get_balance_sql = "SELECT balance, pending_withdraw FROM users WHERE user_id = %s"
-    get_balance_values = [user_id, ]
-    balance_return = db.get_db_data(get_balance_sql, get_balance_values)
-    balance = Decimal(balance_return[0][0])
-    pending = Decimal(balance_return[0][1])
     try:
+        get_balance_sql = "SELECT balance, pending_withdraw FROM users WHERE user_id = %s"
+        get_balance_values = [user_id, ]
+        balance_return = db.get_db_data(get_balance_sql, get_balance_values)
+        balance = Decimal(balance_return[0][0])
+        pending = Decimal(balance_return[0][1])
         return balance, pending
     except Exception as e:
+        logger.info("error getting balance: {}".format(e))
         return None
 
 

@@ -160,7 +160,7 @@ async def add_balance(user, username, amount):
     """
     current_balance, _ = tasks.get_balance(user)
     if current_balance is not None and current_balance is not ():
-        new_balance = Decimal(current_balance) + Decimal(amount)
+        new_balance = current_balance + Decimal(amount)
         await tasks.set_balance(user, new_balance)
     else:
         new_user_sql = "INSERT INTO users (balance, user_id, username) VALUES (%s, %s, %s)"
@@ -197,16 +197,18 @@ async def send_tip(message, users_to_tip, ctx, bot):
     Update the database with new balances and respond with emojis.
     """
     sender_new_balance = message['sender_balance'] - message['total_tip_amount']
-    try:
-        for receiver in users_to_tip:
+    for receiver in users_to_tip:
+        try:
             await add_balance(receiver['user'], receiver['username'], message['tip_amount'])
             dm_user = bot.get_user(int(receiver['user']))
+            logger.info("dm user: {}".format(dm_user))
+            logger.info("dm user id: {}".format(dm_user.id))
             await dm_user.send("You just received a {} {} tip from <@{}>".format(message['tip_amount'],
                                                                                  TOKEN,
                                                                                  message['author']))
-    except Exception as e:
-        logger.error("Error adding balance / sending dm: {}".format(e))
-        pass
+        except Exception as e:
+            logger.error("Error adding balance / sending dm: {}".format(e))
+            continue
 
     await tasks.set_balance(message['author'], sender_new_balance)
 
@@ -222,7 +224,7 @@ async def validate_user(message):
     """
     Validate the user has enough tokens to send the tip.
     """
-    message['sender_balance'], _ = Decimal(tasks.get_balance(message['author']))
+    message['sender_balance'], _ = tasks.get_balance(message['author'])
 
     if (message['sender_balance'] is None
             or message['sender_balance'] is ()
@@ -253,7 +255,3 @@ async def generate_new_account(message, w3):
     # Update user's account
     tasks.set_account.delay(message.author.id, address)
     return
-
-
-if __name__ == '__main__':
-    queue.start()
