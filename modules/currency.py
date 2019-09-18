@@ -161,7 +161,7 @@ async def add_balance(user, username, amount):
     current_balance, _ = tasks.get_balance(user)
     if current_balance is not None and current_balance is not ():
         new_balance = current_balance + Decimal(amount)
-        await tasks.set_balance(user, new_balance)
+        tasks.set_balance(user, new_balance)
     else:
         new_user_sql = "INSERT INTO users (balance, user_id, username) VALUES (%s, %s, %s)"
         new_user_values = [amount, user, username]
@@ -210,7 +210,7 @@ async def send_tip(message, users_to_tip, ctx, bot):
             logger.error("Error adding balance / sending dm: {}".format(e))
             continue
 
-    await tasks.set_balance(message['author'], sender_new_balance)
+    tasks.set_balance(message['author'], sender_new_balance)
 
     await ctx.message.add_reaction('☑')
     # Note, these have unicode that does not show in IDE.  Do not modify

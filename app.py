@@ -185,6 +185,7 @@ async def tip(ctx):
                                       "{1} {0} tip.".format(TOKEN, message['total_tip_amount']))
         return
 
+    logger.info("Message before send tip: {}".format(message))
     await currency.send_tip(message, users_to_tip, ctx, bot)
 
 
